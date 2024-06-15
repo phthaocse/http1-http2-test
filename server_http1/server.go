@@ -12,7 +12,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", handler)
 	fmt.Println("Starting HTTP/1.1 server with TLS on :8080")
-	if err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil); err != nil {
+	//if err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil); err != nil {
+	//	fmt.Println("Error starting HTTP/1.1 server:", err)
+	//}
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error starting HTTP/1.1 server:", err)
 	}
 }

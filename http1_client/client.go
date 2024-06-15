@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -21,6 +20,37 @@ import (
 
 	"time"
 )
+
+var (
+	DefaultHistogramBoundariesPrometheus = []float64{
+		0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8,
+		1, 1.3, 2, 3, 5, 8,
+		10, 13, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000, 15000,
+	}
+)
+
+const (
+	HTTPServerMetricComponent string = "http_server"
+)
+
+const (
+	HTTPRequestDurationSecondsAttribute string = "request_duration_seconds"
+)
+
+func DefaultAggregationSelector(ik sdkmetric.InstrumentKind) sdkmetric.Aggregation {
+	switch ik {
+	case sdkmetric.InstrumentKindCounter, sdkmetric.InstrumentKindUpDownCounter, sdkmetric.InstrumentKindObservableCounter, sdkmetric.InstrumentKindObservableUpDownCounter:
+		return sdkmetric.AggregationSum{}
+	case sdkmetric.InstrumentKindObservableGauge, sdkmetric.InstrumentKindGauge:
+		return sdkmetric.AggregationLastValue{}
+	case sdkmetric.InstrumentKindHistogram:
+		return sdkmetric.AggregationExplicitBucketHistogram{
+			Boundaries: DefaultHistogramBoundariesPrometheus,
+			NoMinMax:   false,
+		}
+	}
+	panic("unknown instrumentation kind")
+}
 
 type ApplicationResource struct {
 	ServiceName string
@@ -56,7 +86,7 @@ func InitMeterProvideWith(ctx context.Context, exporters []string, rs Applicatio
 	for _, exporterName := range exporters {
 		switch exporterName {
 		case "prometheus":
-			promExporter, err := prometheus.New()
+			promExporter, err := prometheus.New(prometheus.WithAggregationSelector(DefaultAggregationSelector))
 			if err != nil {
 				return nil, errors.New("failed to initialize prometheus exporter")
 			}
@@ -101,21 +131,22 @@ type Client struct {
 }
 
 func NewClient() *Client {
-	// Tạo cấu hình TLS
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true, // Bỏ qua xác minh chứng chỉ (chỉ dùng cho phát triển)
-	}
-
-	// Tạo http.Transport với cấu hình TLS
-	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
-	}
-
-	c := &Client{
-		client: &http.Client{
-			Transport: transport,
-		},
-	}
+	//// Tạo cấu hình TLS
+	//tlsConfig := &tls.Config{
+	//	InsecureSkipVerify: true, // Bỏ qua xác minh chứng chỉ (chỉ dùng cho phát triển)
+	//}
+	//
+	//// Tạo http.Transport với cấu hình TLS
+	//transport := &http.Transport{
+	//	TLSClientConfig: tlsConfig,
+	//}
+	//
+	//c := &Client{
+	//	client: &http.Client{
+	//		Transport: transport,
+	//	},
+	//}
+	c := &Client{client: http.DefaultClient}
 	return c
 }
 func (c *Client) fetch(url string) {
@@ -166,7 +197,7 @@ func main() {
 		return
 	}
 	client := NewClient()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 3; i++ {
 		go func() {
 			for true {
 				client.fetch(http1URL)

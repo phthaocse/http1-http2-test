@@ -10,7 +10,7 @@ services:
     build:
       context: ./server_http2
     ports:
-      - "8443:8443"
+      - "8081:8081"
     restart: no
 
   http1_client:
@@ -21,8 +21,8 @@ services:
       - server_http2
     restart: no
     environment:
-      - SERVER_HTTP1_URL=https://server_http1:8080
-      - SERVER_HTTP2_URL=https://server_http2:8443
+      - SERVER_HTTP1_URL=http://server_http1:8080
+      - SERVER_HTTP2_URL=http://server_http2:8181
 
   http2_client:
     build:
@@ -32,8 +32,8 @@ services:
       - server_http2
     restart: no
     environment:
-      - SERVER_HTTP1_URL=https://server_http1:8080
-      - SERVER_HTTP2_URL=https://server_http2:8443
+      - SERVER_HTTP1_URL=http://server_http1:8080
+      - SERVER_HTTP2_URL=http://server_http2:8181
 
   prometheus:
     image: prom/prometheus
