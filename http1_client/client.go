@@ -166,7 +166,7 @@ func main() {
 		return
 	}
 	client := NewClient()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 3; i++ {
 		go func() {
 			for true {
 				client.fetch(http1URL)

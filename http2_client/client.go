@@ -17,6 +17,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"sync"
 
@@ -114,8 +115,13 @@ func NewClient() *Client {
 	return c
 }
 
-func (c *Client) fetchHTTP2(url string) {
-	req, _ := http.NewRequest("GET", url, nil)
+func (c *Client) fetchHTTP2(rawUrl string) {
+	url, _ := url.ParseRequestURI(rawUrl)
+	req := &http.Request{
+		Method: "GET",
+		URL:    url,
+		Header: http.Header{},
+	}
 	genCustomHeader(req, 12)
 	start := time.Now()
 	resp, err := c.client.Do(req)
@@ -131,7 +137,7 @@ func (c *Client) fetchHTTP2(url string) {
 		fmt.Println("Error reading response body:", err)
 		return
 	}
-	recordLatency(url, "http2", latency)
+	recordLatency(rawUrl, "http2", latency)
 	//fmt.Printf("Response from %s:\n%s\n", url, body)
 	//fmt.Printf("Time taken: %v\n", latency)
 }
@@ -162,7 +168,7 @@ func main() {
 		return
 	}
 	client := NewClient()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 3; i++ {
 		go func() {
 			for true {
 				client.fetchHTTP2(http2URL)
