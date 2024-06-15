@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'golang-app'
+    static_configs:
+      - targets: ['http1_client:8080', 'http2_client:8080', 'server_http1:8080', 'server_http2:8443']

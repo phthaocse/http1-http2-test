@@ -1,0 +1,52 @@
+services:
+  server_http1:
+    build:
+      context: ./server_http1
+    ports:
+      - "8080:8080"
+    restart: no
+
+  server_http2:
+    build:
+      context: ./server_http2
+    ports:
+      - "8443:8443"
+    restart: no
+
+  http1_client:
+    build:
+      context: http1_client
+    depends_on:
+      - server_http1
+      - server_http2
+    restart: no
+    environment:
+      - SERVER_HTTP1_URL=https://server_http1:8080
+      - SERVER_HTTP2_URL=https://server_http2:8443
+
+  http2_client:
+    build:
+      context: http2_client
+    depends_on:
+      - server_http1
+      - server_http2
+    restart: no
+    environment:
+      - SERVER_HTTP1_URL=https://server_http1:8080
+      - SERVER_HTTP2_URL=https://server_http2:8443
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: no
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: no
